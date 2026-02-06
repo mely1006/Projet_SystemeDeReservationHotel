@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
 import { reservationsAPI } from '../../services/api';
+import { formatCurrency } from '../../utils/currency';
 import type { Reservation } from '../../types';
+import { exportReservationsCSV } from '../../utils/exportCSV.ts';
 import './Reservations.css';
 
 const Reservations = () => {
@@ -27,6 +29,18 @@ const Reservations = () => {
       console.error('Erreur lors du chargement des réservations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
+      try {
+        await reservationsAPI.delete(id);
+        fetchReservations(); // Recharger la liste
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de l\'annulation de la réservation');
+      }
     }
   };
 
@@ -65,7 +79,9 @@ const Reservations = () => {
         subtitle={`${reservations.length} réservations au total`}
         actions={
           <>
-            <Button variant="outline">📥 Exporter</Button>
+           <Button variant="outline" onClick={() => exportReservationsCSV(reservations)}>
+                  📥 Exporter CSV
+           </Button>
             <Button 
               variant="accent" 
               icon="➕" 
@@ -176,7 +192,7 @@ const Reservations = () => {
                   <span className="detail-icon">💰</span>
                   <div>
                     <div className="detail-label">Prix Total</div>
-                    <div className="detail-value price">€{reservation.prixTotal}</div>
+                    <div className="detail-value price">{formatCurrency(reservation.prixTotal)}</div>
                   </div>
                 </div>
               </div>
@@ -190,7 +206,13 @@ const Reservations = () => {
               <div className="reservation-actions">
                 <button className="btn-icon" title="Voir détails">👁</button>
                 <button className="btn-icon" title="Modifier">✎</button>
-                <button className="btn-icon" title="Annuler">🗑</button>
+                <button 
+                  className="btn-icon btn-icon-danger" 
+                  title="Annuler"
+                  onClick={() => handleDelete(reservation.id)}
+                >
+                  🗑
+                </button>
               </div>
             </div>
           );

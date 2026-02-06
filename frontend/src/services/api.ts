@@ -29,18 +29,29 @@ export const clientsAPI = {
     search?: string;
     statut?: string;
   }): Promise<PaginatedResponse<Client>> => {
+    console.log('API getAll clients - params:', params);
+    console.log('API URL:', `${API_BASE_URL}/clients`);
     const { data } = await api.get('/clients', { params });
+    console.log('API getAll clients - réponse:', data);
     return data;
   },
 
   getById: async (id: number): Promise<Client> => {
+    console.log('API getById client:', id);
     const { data } = await api.get(`/clients/${id}`);
     return data;
   },
 
   create: async (client: CreateClientInput): Promise<Client> => {
-    const { data } = await api.post('/clients', client);
-    return data;
+    console.log('API create client - données:', client);
+    try {
+      const { data } = await api.post('/clients', client);
+      console.log('API create client - réponse:', data);
+      return data;
+    } catch (error: any) {
+      console.error('API create client - erreur:', error.response?.data);
+      throw error;
+    }
   },
 
   update: async (id: number, client: Partial<CreateClientInput>): Promise<Client> => {

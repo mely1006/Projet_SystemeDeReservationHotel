@@ -4,6 +4,7 @@ import Header from '../../components/Header/Header';
 import StatCard from '../../components/StatCard/StatCard';
 import Button from '../../components/Button/Button';
 import { dashboardAPI, reservationsAPI } from '../../services/api';
+import { formatCurrency } from '../../utils/currency';
 import type { DashboardStats, Reservation } from '../../types';
 import './Dashboard.css';
 
@@ -58,25 +59,25 @@ const Dashboard = () => {
         <StatCard
           label="Réservations Actives"
           value={stats?.reservations.enCours || 0}
-          trend={{ value: '12% ce mois', isPositive: true }}
+          //trend={{ value: '12% ce mois', isPositive: true }}
           icon="📋"
         />
         <StatCard
           label="Taux d'Occupation"
           value={`${stats?.chambres.tauxOccupation || 0}%`}
-          trend={{ value: '5% vs hier', isPositive: true }}
+          //trend={{ value: '5% vs hier', isPositive: true }}
           icon="🏨"
         />
         <StatCard
           label="Revenus du Mois"
-          value={`€${Number(stats?.reservations.revenusMois || 0).toLocaleString()}`}
-          trend={{ value: '18% ce mois', isPositive: true }}
+          value={formatCurrency(Number(stats?.reservations.revenusMois || 0))}
+          //trend={{ value: '18% ce mois', isPositive: true }}
           icon="💰"
         />
         <StatCard
           label="Chambres Disponibles"
           value={stats?.chambres.disponibles || 0}
-          trend={{ value: '8 vs hier', isPositive: false }}
+          //trend={{ value: '8 vs hier', isPositive: false }}
           icon="🔑"
         />
       </div>
@@ -115,7 +116,7 @@ const Dashboard = () => {
                     📅 {new Date(reservation.dateDebut).toLocaleDateString()} -{' '}
                     {new Date(reservation.dateFin).toLocaleDateString()}
                   </span>
-                  <span className="detail-item">💰 €{reservation.prixTotal}</span>
+                  <span className="detail-item">💰 {formatCurrency(reservation.prixTotal)}</span>
                 </div>
               </div>
             ))}

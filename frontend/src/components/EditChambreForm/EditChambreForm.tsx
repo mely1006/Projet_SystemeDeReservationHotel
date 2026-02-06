@@ -1,53 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
 import { chambresAPI } from '../../services/api';
-import type { CreateChambreInput } from '../../types';
-import './ChambreForm.css';
+import type { Chambre } from '../../types';
+//import './components/ChambreForm/ChambreForm.css';
 
-interface ChambreFormProps {
+interface EditChambreFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  chambre: Chambre | null;
 }
 
-const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
-  const [formData, setFormData] = useState<CreateChambreInput>({
+const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFormProps) => {
+  const [formData, setFormData] = useState({
     numero: '',
-    type: 'standard',
+    type: 'standard' as 'standard' | 'double' | 'deluxe' | 'suite' | 'suite_presidentielle',
     prix: 0,
     capacite: 2,
     etage: 1,
     superficie: 0,
     description: '',
-    equipements: [],
+    statut: 'disponible' as 'disponible' | 'occupee' | 'maintenance',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (chambre) {
+      setFormData({
+        numero: chambre.numero,
+        type: chambre.type,
+        prix: chambre.prix,
+        capacite: chambre.capacite,
+        etage: chambre.etage,
+        superficie: chambre.superficie,
+        description: chambre.description || '',
+        statut: chambre.statut,
+      });
+    }
+  }, [chambre]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!chambre) return;
+    
     setError('');
     setLoading(true);
 
     try {
-      await chambresAPI.create(formData);
+      await chambresAPI.update(chambre.id, formData);
       onSuccess();
       onClose();
-      // Réinitialiser le formulaire
-      setFormData({
-        numero: '',
-        type: 'standard',
-        prix: 0,
-        capacite: 2,
-        etage: 1,
-        superficie: 0,
-        description: '',
-        equipements: [],
-      });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la création de la chambre');
+      setError(err.response?.data?.message || 'Erreur lors de la modification');
     } finally {
       setLoading(false);
     }
@@ -65,8 +72,10 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
     }));
   };
 
+  if (!chambre) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ajouter une Chambre" size="medium">
+    <Modal isOpen={isOpen} onClose={onClose} title="Modifier la Chambre" size="medium">
       <form onSubmit={handleSubmit} className="chambre-form">
         {error && <div className="error-message">{error}</div>}
 
@@ -80,7 +89,6 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
               name="numero"
               value={formData.numero}
               onChange={handleChange}
-              placeholder="101"
               required
               className="form-input"
             />
@@ -114,7 +122,6 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
               name="prix"
               value={formData.prix}
               onChange={handleChange}
-              placeholder="50000"
               min="0"
               step="100"
               required
@@ -150,7 +157,6 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
               min="1"
               required
               className="form-input"
-              placeholder="1, 2, 3..."
             />
           </div>
 
@@ -163,12 +169,28 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
               name="superficie"
               value={formData.superficie}
               onChange={handleChange}
-              placeholder="25"
               min="0"
               step="0.01"
               required
               className="form-input"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Statut <span className="required">*</span>
+            </label>
+            <select
+              name="statut"
+              value={formData.statut}
+              onChange={handleChange}
+              required
+              className="form-input"
+            >
+              <option value="disponible">Disponible</option>
+              <option value="occupee">Occupée</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
           </div>
         </div>
 
@@ -178,7 +200,6 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Chambre spacieuse avec vue sur jardin..."
             rows={3}
             className="form-input"
           />
@@ -189,7 +210,7 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
             Annuler
           </Button>
           <Button type="submit" variant="accent" disabled={loading}>
-            {loading ? 'Création...' : 'Créer la Chambre'}
+            {loading ? 'Modification...' : 'Modifier'}
           </Button>
         </div>
       </form>
@@ -197,4 +218,4 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
   );
 };
 
-export default ChambreForm;
+export default EditChambreForm;

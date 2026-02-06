@@ -1,17 +1,25 @@
+// frontend/src/pages/Clients/Clients.tsx
 import { useEffect, useState } from 'react';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
 import ClientForm from '../../components/ClientForm/ClientForm';
-import { clientsAPI } from '../../services/api';
+import EditClientForm from '../../components/EditClientForm/EditClientForm';
+import ClientDetailsModal from '../../components/ClientDetailsModal/ClientDetailsModal.tsx';
+import { clientsAPI } from '../../services/api.ts';
+import { formatCurrency } from '../../utils/currency';
 import type { Client } from '../../types';
+import { exportClientsCSV } from '../../utils/exportCSV.ts';
 import './Clients.css';
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  //const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('');
 
@@ -24,35 +32,106 @@ const Clients = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const data = await clientsAPI.getAll({
+
+      const response = await clientsAPI.getAll({
         page,
         limit,
-        search: search || undefined,
-        statut: statutFilter || undefined,
+        search,
+        statut: statutFilter,
       });
-      setClients(data.data);
-      setTotal(data.total);
-    } catch (error) {
-      console.error('Erreur lors du chargement des clients:', error);
+
+      // récupération propre des données
+      const allClients: Client[] = response.data;
+
+      let filtered = [...allClients];
+
+      // Filtre par recherche
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filtered = filtered.filter(client =>
+          client.nom.toLowerCase().includes(searchLower) ||
+          client.prenom.toLowerCase().includes(searchLower) ||
+          client.email.toLowerCase().includes(searchLower) ||
+          client.telephone.includes(search)
+        );
+      }
+
+      // Filtre par statut
+      if (statutFilter) {
+        filtered = filtered.filter(client => client.statut === statutFilter);
+      }
+
+      setClients(filtered);
+
+    } catch (error: any) {
+      alert('Erreur lors du chargement des clients. Vérifiez que le backend est démarré sur http://localhost:3000');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatutBadge = (statut: string) => {
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
+      try {
+        await clientsAPI.delete(id);
+        fetchClients();
+      } catch (error) {
+        alert('Erreur lors de la suppression du client');
+      }
+    }
+  };
+
+   const handleEdit = (client: Client) => {
+    setSelectedClient(client);
+    setIsEditFormOpen(true);
+  };
+
+  const handleViewDetails = (client: Client) => {
+    setSelectedClient(client);
+    setIsDetailsOpen(true);
+  };
+
+  const handleExport = () => {
+    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Statut', 'Réservations', 'Dépenses Totales'];
+    const rows = clients.map(c => [
+      c.prenom,
+      c.nom,
+      c.email,
+      c.telephone,
+      c.statut || 'nouveau',
+      c.nombreReservations || 0,
+      c.depensesTotales || 0,
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `clients_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const getStatutBadge = (statut?: string) => {
     const badges: Record<string, { label: string; className: string }> = {
       vip: { label: '⭐ VIP', className: 'statut-vip' },
       regulier: { label: 'Régulier', className: 'statut-regulier' },
       nouveau: { label: 'Nouveau', className: 'statut-nouveau' },
     };
-    return badges[statut] || { label: statut, className: '' };
+    return badges[statut || 'nouveau'] || { label: 'Nouveau', className: 'statut-nouveau' };
   };
 
   const getInitials = (prenom: string, nom: string) => {
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
   };
 
+  const total = clients.length;
   const totalPages = Math.ceil(total / limit);
+  const paginatedClients = clients.slice((page - 1) * limit, page * limit);
 
   if (loading && clients.length === 0) {
     return (
@@ -71,12 +150,34 @@ const Clients = () => {
         onSuccess={fetchClients}
       />
       
+       <EditClientForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          setIsEditFormOpen(false);
+          setSelectedClient(null);
+        }}
+        onSuccess={fetchClients}
+        client={selectedClient}
+      />
+
+       <ClientDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
+      />
+
+
       <Header
         title="Gestion des Clients"
-        subtitle={`${total} clients au total`}
+        subtitle={`${total} client${total > 1 ? 's' : ''} au total`}
         actions={
           <>
-            <Button variant="outline">📥 Exporter</Button>
+            <Button variant="outline" onClick={() => exportClientsCSV(clients)}>
+                      📥 Exporter CSV
+            </Button>
             <Button variant="accent" icon="➕" onClick={() => setIsFormOpen(true)}>
               Nouveau Client
             </Button>
@@ -84,7 +185,6 @@ const Clients = () => {
         }
       />
 
-      {/* Search and Filters */}
       <div className="search-section">
         <div className="search-box">
           <span className="search-icon">🔍</span>
@@ -113,102 +213,93 @@ const Clients = () => {
         </select>
       </div>
 
-      {/* Clients Table */}
-      <div className="clients-table-wrapper">
-        <div className="table-header">
-          <h2 className="table-title">Liste des Clients</h2>
-          <span className="results-count">
-            Affichage {(page - 1) * limit + 1}-{Math.min(page * limit, total)} sur {total}
-          </span>
-        </div>
+     <div className="clients-grid">
+        {clients.map((client, index) => {
+          const statut = getStatutBadge(client.statut);
+          return (
+            <div key={client.id} className="client-card" style={{ animationDelay: `${index * 0.05}s` }}>
+              <div className="client-card-header">
+                <div
+                  className="client-avatar-large"
+                  style={{
+                    background: `linear-gradient(135deg, ${
+                      ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'][
+                        index % 6
+                      ]
+                    } 0%, ${
+                      ['#764ba2', '#f5576c', '#00f2fe', '#38f9d7', '#fee140', '#330867'][
+                        index % 6
+                      ]
+                    } 100%)`,
+                  }}
+                >
+                  {getInitials(client.prenom, client.nom)}
+                </div>
+                <div className="client-card-info">
+                  <h3 className="client-card-name">
+                    {client.prenom} {client.nom}
+                  </h3>
+                  <p className="client-card-email">{client.email}</p>
+                  <span className={`statut-badge-card ${statut.className}`}>
+                    {statut.label}
+                  </span>
+                </div>
+              </div>
 
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Téléphone</th>
-                <th>Statut</th>
-                <th>Réservations</th>
-                <th>Dépenses Totales</th>
-                <th>Date d'inscription</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client, index) => {
-                const statut = getStatutBadge(client.statut);
-                return (
-                  <tr key={client.id} style={{ animationDelay: `${index * 0.05}s` }}>
-                    <td>
-                      <div className="client-cell">
-                        <div
-                          className="client-avatar"
-                          style={{
-                            background: `linear-gradient(135deg, ${
-                              ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#30cfd0'][
-                                index % 6
-                              ]
-                            } 0%, ${
-                              ['#764ba2', '#f5576c', '#00f2fe', '#38f9d7', '#fee140', '#330867'][
-                                index % 6
-                              ]
-                            } 100%)`,
-                          }}
-                        >
-                          {getInitials(client.prenom, client.nom)}
-                        </div>
-                        <div className="client-info">
-                          <span className="client-name">
-                            {client.prenom} {client.nom}
-                          </span>
-                          <span className="client-email">{client.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{client.telephone}</td>
-                    <td>
-                      <span className={`statut-badge ${statut.className}`}>
-                        {statut.label}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="stat-cell">
-                        <span className="stat-value">{client.nombreReservations}</span>
-                        <span className="stat-label">réservations</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="stat-value">€{Number(client.depensesTotales).toLocaleString()}</span>
-                    </td>
-                    <td>
-                      <div className="stat-cell">
-                        <span className="stat-value">
-                          {new Date(client.dateCreation).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="actions-cell">
-                        <button className="btn-icon" title="Voir le profil">
-                          👁
-                        </button>
-                        <button className="btn-icon" title="Modifier">
-                          ✎
-                        </button>
-                        <button className="btn-icon" title="Historique">
-                          📋
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              <div className="client-card-details">
+                <div className="detail-row">
+                  <span className="detail-label">📞 Téléphone</span>
+                  <span className="detail-value">{client.telephone}</span>
+                </div>
+                
+                <div className="detail-row">
+                  <span className="detail-label">📋 Réservations</span>
+                  <span className="detail-value">{client.nombreReservations}</span>
+                </div>
 
-        {/* Pagination */}
+                <div className="detail-row">
+                  <span className="detail-label">💰 Dépenses</span>
+                  <span className="detail-value">{formatCurrency(Number(client.depensesTotales))}</span>
+                </div>
+
+                <div className="detail-row">
+                  <span className="detail-label">📅 Inscrit le</span>
+                  <span className="detail-value">
+                    {new Date(client.dateCreation).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="client-card-actions">
+                <button 
+                  className="btn-action btn-view" 
+                  onClick={() => handleViewDetails(client)}
+                  title="Voir détails"
+                >
+                  <span>👁</span> Détails
+                </button>
+                <button 
+                  className="btn-action btn-edit" 
+                  onClick={() => handleEdit(client)}
+                  title="Modifier"
+                >
+                  <span>✎</span> Modifier
+                </button>
+                <button 
+                  className="btn-action btn-delete" 
+                  onClick={() => handleDelete(client.id)}
+                  title="Supprimer"
+                >
+                  <span>🗑</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="pagination">
           <div className="pagination-info">
             Affichage {(page - 1) * limit + 1}-{Math.min(page * limit, total)} sur {total} clients
@@ -243,7 +334,7 @@ const Clients = () => {
             </button>
           </div>
         </div>
-      </div>
+      )}
 
       {clients.length === 0 && !loading && (
         <div className="no-results">

@@ -2,14 +2,19 @@ import { useEffect, useState } from 'react';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
 import ChambreForm from '../../components/ChambreForm/ChambreForm';
+import EditChambreForm from '../../components/EditChambreForm/EditChambreForm';
 import { chambresAPI } from '../../services/api';
+import { formatCurrency } from '../../utils/currency';
 import type { Chambre } from '../../types';
+import { exportChambresCSV } from '../../utils/exportCSV.ts';
 import './Chambres.css';
 
 const Chambres = () => {
   const [chambres, setChambres] = useState<Chambre[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [selectedChambre, setSelectedChambre] = useState<Chambre | null>(null);
   const [filters, setFilters] = useState({
     statut: '',
     type: '',
@@ -19,6 +24,12 @@ const Chambres = () => {
   useEffect(() => {
     fetchChambres();
   }, [filters]);
+
+  // Obtenir la liste unique des étages
+  const getEtagesUniques = () => {
+    const etages = [...new Set(chambres.map(c => c.etage))].sort((a, b) => a - b);
+    return etages;
+  };
 
   const fetchChambres = async () => {
     try {
@@ -34,6 +45,23 @@ const Chambres = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette chambre ?')) {
+      try {
+        await chambresAPI.delete(id);
+        fetchChambres(); // Recharger la liste
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression de la chambre');
+      }
+    }
+  };
+
+  const handleEdit = (chambre: Chambre) => {
+    setSelectedChambre(chambre);
+    setIsEditFormOpen(true);
   };
 
   const getTypeLabel = (type: string) => {
@@ -73,12 +101,24 @@ const Chambres = () => {
         onSuccess={fetchChambres}
       />
       
+      <EditChambreForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          setIsEditFormOpen(false);
+          setSelectedChambre(null);
+        }}
+        onSuccess={fetchChambres}
+        chambre={selectedChambre}
+      />
+      
       <Header
         title="Gestion des Chambres"
         subtitle={`${chambres.length} chambres au total`}
         actions={
           <>
-            <Button variant="outline">📥 Exporter</Button>
+            <Button variant="outline" onClick={() => exportChambresCSV(chambres)}>
+                       📥 Exporter CSV
+            </Button>
             <Button variant="accent" icon="➕" onClick={() => setIsFormOpen(true)}>
               Ajouter une Chambre
             </Button>
@@ -123,10 +163,11 @@ const Chambres = () => {
             onChange={(e) => setFilters({ ...filters, etage: e.target.value })}
           >
             <option value="">Tous</option>
-            <option value="1">1er</option>
-            <option value="2">2ème</option>
-            <option value="3">3ème</option>
-            <option value="4">4ème</option>
+            {getEtagesUniques().map((etage) => (
+              <option key={etage} value={etage}>
+                {etage}ème
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -157,16 +198,27 @@ const Chambres = () => {
 
               <div className="chambre-footer">
                 <div className="chambre-prix-container">
-                  <div className="chambre-prix">€{chambre.prix}</div>
+                  <div className="chambre-prix">{formatCurrency(chambre.prix)}</div>
                   <div className="prix-label">par nuit</div>
                 </div>
 
                 <div className="chambre-actions">
-                  <button className="btn-icon" title="Modifier">
+                  <button 
+                    className="btn-icon" 
+                    title="Modifier"
+                    onClick={() => handleEdit(chambre)}
+                  >
                     ✎
                   </button>
                   <button className="btn-icon" title="Détails">
                     👁
+                  </button>
+                  <button 
+                    className="btn-icon btn-icon-danger" 
+                    title="Supprimer"
+                    onClick={() => handleDelete(chambre.id)}
+                  >
+                    🗑
                   </button>
                 </div>
               </div>

@@ -1,5 +1,7 @@
 .clients-page {
   animation: fadeIn 0.5s ease-out;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .clients-loading {
@@ -13,17 +15,18 @@
 
 .search-section {
   background: var(--surface);
-  padding: 1.5rem 2rem;
+  padding: 1.5rem;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   margin-bottom: 2rem;
   display: flex;
   gap: 1rem;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
 .search-box {
   flex: 1;
+  min-width: 250px;
   position: relative;
 }
 
@@ -61,111 +64,92 @@
   cursor: pointer;
 }
 
-.clients-table-wrapper {
+/* NOUVELLE GRID RESPONSIVE */
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.client-card {
   background: var(--surface);
   border-radius: 16px;
+  padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-}
-
-.table-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  color: var(--primary);
-  margin: 0;
-}
-
-.results-count {
-  color: var(--text-light);
-  font-size: 0.9rem;
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-thead {
-  background: var(--bg);
-}
-
-th {
-  padding: 1rem 1.5rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-light);
-  white-space: nowrap;
-}
-
-tbody tr {
-  border-bottom: 1px solid var(--border);
   transition: all 0.3s ease;
-  animation: fadeIn 0.3s ease-out;
+  animation: slideInUp 0.5s ease-out forwards;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-tbody tr:hover {
-  background: #fafafa;
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-td {
-  padding: 1.25rem 1.5rem;
-  white-space: nowrap;
+.client-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.client-cell {
+.client-card-header {
   display: flex;
   align-items: center;
   gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
 }
 
-.client-avatar {
-  width: 48px;
-  height: 48px;
+.client-avatar-large {
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
 
-.client-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.client-card-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.client-name {
-  font-weight: 600;
+.client-card-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
   color: var(--primary);
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.client-email {
+.client-card-email {
   font-size: 0.85rem;
   color: var(--text-light);
+  margin: 0 0 0.5rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.statut-badge {
+.statut-badge-card {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -188,32 +172,100 @@ td {
   color: #1e40af;
 }
 
-.stat-cell {
+.client-card-details {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.75rem;
 }
 
-.stat-value {
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-light);
-}
-
-.actions-cell {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.pagination {
-  padding: 1.5rem 2rem;
+.detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.client-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-action {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-view {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-view:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.btn-edit {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.btn-edit:hover {
+  background: var(--accent);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.btn-delete {
+  background: var(--bg);
+  color: var(--danger);
+  padding: 0.6rem;
+  flex: 0;
+}
+
+.btn-delete:hover {
+  background: var(--danger);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-action span {
+  font-size: 1.1rem;
+}
+
+.pagination {
+  padding: 2rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .pagination-info {
@@ -225,6 +277,7 @@ td {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .page-btn {
@@ -263,19 +316,16 @@ td {
   text-align: center;
   padding: 3rem;
   color: var(--text-light);
+  background: var(--surface);
+  border-radius: 16px;
 }
 
-@media (max-width: 1024px) {
-  .table-container {
-    overflow-x: scroll;
-  }
-
-  table {
-    min-width: 900px;
-  }
-}
-
+/* RESPONSIVE */
 @media (max-width: 768px) {
+  .clients-grid {
+    grid-template-columns: 1fr;
+  }
+
   .search-section {
     flex-direction: column;
   }
@@ -284,8 +334,39 @@ td {
     width: 100%;
   }
 
+  .client-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .btn-action {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
   .pagination {
-    flex-direction: column;
-    gap: 1rem;
+    justify-content: center;
+  }
+
+  .pagination-info {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .clients-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1201px) {
+  .clients-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  .clients-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

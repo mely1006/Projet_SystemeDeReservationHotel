@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
 import { reservationsAPI, clientsAPI, chambresAPI } from '../../services/api';
+import { formatCurrency } from '../../utils/currency';
 import type { Client, Chambre } from '../../types';
 import './NouvelleReservation.css';
 
@@ -267,7 +268,7 @@ const NouvelleReservation = () => {
                       >
                         <div className="chambre-option-header">
                           <strong>Chambre {chambre.numero}</strong>
-                          <span className="chambre-prix">€{chambre.prix}/nuit</span>
+                          <span className="chambre-prix">{formatCurrency(chambre.prix)}/nuit</span>
                         </div>
                         <div className="chambre-option-details">
                           {chambre.type} • {chambre.capacite} pers. • {chambre.superficie}m²
@@ -380,7 +381,7 @@ const NouvelleReservation = () => {
 
             <div className="summary-total">
               <div className="total-label">Total</div>
-              <div className="total-amount">€{total}</div>
+              <div className="total-amount">{formatCurrency(total)}</div>
             </div>
           </div>
         </div>
