@@ -4,6 +4,7 @@ import Button from '../Button/Button';
 import { chambresAPI } from '../../services/api';
 import type { CreateChambreInput } from '../../types';
 import './ChambreForm.css';
+import ImageUpload from '../ImageUpload/ImageUpload';
 
 interface ChambreFormProps {
   isOpen: boolean;
@@ -21,15 +22,23 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
     superficie: 0,
     description: '',
     equipements: [],
+    
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+   const chambreData = {
+      ...formData,
+      imageUrl: imageUrl,
+    };
+    await chambresAPI.create(chambreData);
 
     try {
       await chambresAPI.create(formData);
@@ -64,6 +73,10 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
         : value,
     }));
   };
+
+  /*function setImageUrl(url: string): void {
+    throw new Error('Function not implemented.');
+  }*/
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Ajouter une Chambre" size="medium">
@@ -170,6 +183,15 @@ const ChambreForm = ({ isOpen, onClose, onSuccess }: ChambreFormProps) => {
               className="form-input"
             />
           </div>
+{ 
+          <div className="form-group">
+              <label className="form-label">Photo de la chambre</label>
+              <ImageUpload 
+                onImageUploaded={(url) => setImageUrl(url)}
+                currentImage={imageUrl}
+              />
+          </div>
+           }
         </div>
 
         <div className="form-group">

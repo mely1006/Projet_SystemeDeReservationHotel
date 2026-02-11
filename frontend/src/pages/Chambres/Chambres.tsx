@@ -7,6 +7,7 @@ import { chambresAPI } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
 import type { Chambre } from '../../types';
 import { exportChambresCSV } from '../../utils/exportCSV.ts';
+import ChambreDetailsModal from '../../components/ChambreDetailsModal/ChambreDetailsModal.tsx';
 import './Chambres.css';
 
 const Chambres = () => {
@@ -20,10 +21,17 @@ const Chambres = () => {
     type: '',
     etage: '',
   });
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetchChambres();
   }, [filters]);
+
+  //Fonction pour ouvrir les détails
+  const handleViewDetails = (chambre: Chambre) => {
+    setSelectedChambre(chambre);
+    setIsDetailsOpen(true);
+  };
 
   // Obtenir la liste unique des étages
   const getEtagesUniques = () => {
@@ -210,8 +218,12 @@ const Chambres = () => {
                   >
                     ✎
                   </button>
-                  <button className="btn-icon" title="Détails">
-                    👁
+                  <button 
+                      className="btn-icon" 
+                      title="Détails"
+                      onClick={() => handleViewDetails(chambre)}
+                    >
+                      👁
                   </button>
                   <button 
                     className="btn-icon btn-icon-danger" 
@@ -232,6 +244,15 @@ const Chambres = () => {
           <p>Aucune chambre trouvée avec ces filtres.</p>
         </div>
       )}
+
+      <ChambreDetailsModal
+          isOpen={isDetailsOpen}
+          onClose={ () => {
+            setIsDetailsOpen(false)
+            setSelectedChambre(null)
+          }}
+          chambre={selectedChambre} 
+      />
     </div>
   );
 };

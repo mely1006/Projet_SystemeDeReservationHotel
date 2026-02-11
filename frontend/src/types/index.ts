@@ -41,6 +41,8 @@ export interface Chambre {
   equipements?: string[];
   dateCreation: string;
   dateModification: string;
+  imageUrl?: string;
+
 }
 
 export interface CreateChambreInput {
@@ -52,7 +54,13 @@ export interface CreateChambreInput {
   superficie: number;
   description?: string;
   equipements?: string[];
+  imageUrl?: string;
+  statut?: 'disponible' | 'occupee' | 'maintenance';
+
 }
+
+/*export interface UpdateChambreInput extends Partial<CreateChambreInput> {
+}*/
 
 // Types pour les Réservations
 export interface Reservation {
@@ -88,6 +96,8 @@ export interface CreateReservationInput {
   clientId: number;
   chambreId: number;
   prixTotal: number;
+  statut?: 'en_attente' | 'confirmee' | 'en_cours' | 'terminee' | 'annulee';
+
 }
 
 // Types pour les Paiements

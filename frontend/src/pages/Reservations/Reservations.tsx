@@ -2,21 +2,28 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
-import { reservationsAPI } from '../../services/api';
+import EditReservationForm from '../../components/EditReservationForm/EditReservationForm';
+import ReservationDetailsModal from '../../components/ReservationDetailsModal/ReservationDetailsModal';
+import { reservationsAPI, chambresAPI } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
+import { exportReservationsCSV } from '../../utils/exportCSV';
 import type { Reservation } from '../../types';
-import { exportReservationsCSV } from '../../utils/exportCSV.ts';
 import './Reservations.css';
 
 const Reservations = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [statutFilter, setStatutFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'nouvelles' | 'toutes'>('toutes');
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchReservations();
-  }, [statutFilter]);
+  }, [statutFilter, activeTab]);
 
   const fetchReservations = async () => {
     try {
@@ -32,16 +39,53 @@ const Reservations = () => {
     }
   };
 
+  const handleConfirm = async (reservation: Reservation) => {
+    if (!window.confirm('Confirmer cette réservation ?')) return;
+
+    try {
+      // 1. Mettre à jour le statut de la réservation
+      await reservationsAPI.update(reservation.id, { statut: 'confirmee' });
+
+      // 2. Marquer la chambre comme occupée
+      await chambresAPI.update(reservation.chambre.id, { statut: 'occupee' });
+
+      // 3. Envoyer l'email de confirmation (géré par le backend)
+      // L'email sera envoyé automatiquement lors de la mise à jour
+
+      alert('✅ Réservation confirmée ! Un email a été envoyé au client.');
+      fetchReservations();
+    } catch (error) {
+      console.error('Erreur confirmation:', error);
+      alert('❌ Erreur lors de la confirmation');
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
       try {
-        await reservationsAPI.delete(id);
-        fetchReservations(); // Recharger la liste
+        const reservation = reservations.find(r => r.id === id);
+        if (reservation) {
+          // Annuler la réservation
+          await reservationsAPI.update(id, { statut: 'annulee' });
+          // Libérer la chambre
+          await chambresAPI.update(reservation.chambre.id, { statut: 'disponible' });
+        }
+        fetchReservations();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         alert('Erreur lors de l\'annulation de la réservation');
       }
     }
+  };
+
+  const handleEdit = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsEditFormOpen(true);
+  };
+
+  const handleViewDetails = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsDetailsOpen(true);
   };
 
   const getStatutLabel = (statut: string) => {
@@ -63,6 +107,30 @@ const Reservations = () => {
     return diffDays;
   };
 
+  // Filtrer les réservations
+  const filteredReservations = reservations.filter(reservation => {
+    // Filtre par onglet
+    if (activeTab === 'nouvelles') {
+      if (reservation.statut !== 'en_attente') return false;
+      // Optionnel: ajouter filtre source='site_web' si vous avez ce champ
+    }
+
+    // Filtre par recherche
+    if (search) {
+      const searchLower = search.toLowerCase();
+      const clientName = `${reservation.client.prenom} ${reservation.client.nom}`.toLowerCase();
+      const chambreNum = reservation.chambre.numero.toLowerCase();
+      
+      if (!clientName.includes(searchLower) && !chambreNum.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const nouvellesReservations = reservations.filter(r => r.statut === 'en_attente').length;
+
   if (loading) {
     return (
       <div className="reservations-loading">
@@ -74,14 +142,33 @@ const Reservations = () => {
 
   return (
     <div className="reservations-page">
+      <EditReservationForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          setIsEditFormOpen(false);
+          setSelectedReservation(null);
+        }}
+        onSuccess={fetchReservations}
+        reservation={selectedReservation}
+      />
+
+      <ReservationDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedReservation(null);
+        }}
+        reservation={selectedReservation}
+      />
+
       <Header
         title="Gestion des Réservations"
         subtitle={`${reservations.length} réservations au total`}
         actions={
           <>
-           <Button variant="outline" onClick={() => exportReservationsCSV(reservations)}>
-                  📥 Exporter CSV
-           </Button>
+            <Button variant="outline" onClick={() => exportReservationsCSV(reservations)}>
+              📥 Exporter CSV
+            </Button>
             <Button 
               variant="accent" 
               icon="➕" 
@@ -93,8 +180,37 @@ const Reservations = () => {
         }
       />
 
-      {/* Filters */}
+      {/* Onglets */}
+      <div className="tabs-container">
+        <button
+          className={`tab ${activeTab === 'nouvelles' ? 'active' : ''}`}
+          onClick={() => setActiveTab('nouvelles')}
+        >
+          🆕 Nouvelles Réservations
+          {nouvellesReservations > 0 && (
+            <span className="badge">{nouvellesReservations}</span>
+          )}
+        </button>
+        <button
+          className={`tab ${activeTab === 'toutes' ? 'active' : ''}`}
+          onClick={() => setActiveTab('toutes')}
+        >
+          📋 Toutes les Réservations
+        </button>
+      </div>
+
+      {/* Barre de recherche et filtres */}
       <div className="filters-section">
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Rechercher par nom de client ou numéro de chambre..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
         <div className="filter-group">
           <label className="filter-label">Filtrer par statut:</label>
           <select
@@ -103,18 +219,18 @@ const Reservations = () => {
             className="filter-select"
           >
             <option value="">Tous les statuts</option>
-            <option value="en_attente">En Attente</option>
-            <option value="confirmee">Confirmée</option>
-            <option value="en_cours">En Cours</option>
-            <option value="terminee">Terminée</option>
-            <option value="annulee">Annulée</option>
+            <option value="en_attente"> En Attente</option>
+            <option value="confirmee"> Confirmée</option>
+            <option value="en_cours"> En Cours</option>
+            <option value="terminee"> Terminée</option>
+            <option value="annulee"> Annulée</option>
           </select>
         </div>
       </div>
 
       {/* Reservations Grid */}
       <div className="reservations-grid">
-        {reservations.map((reservation, index) => {
+        {filteredReservations.map((reservation, index) => {
           const nights = calculateNights(reservation.dateDebut, reservation.dateFin);
           
           return (
@@ -204,8 +320,29 @@ const Reservations = () => {
               )}
 
               <div className="reservation-actions">
-                <button className="btn-icon" title="Voir détails">👁</button>
-                <button className="btn-icon" title="Modifier">✎</button>
+                {activeTab === 'nouvelles' && (
+                  <button 
+                    className="btn-icon btn-confirm" 
+                    title="Confirmer"
+                    onClick={() => handleConfirm(reservation)}
+                  >
+                    ✅ Confirmer
+                  </button>
+                )}
+                <button 
+                  className="btn-icon" 
+                  title="Voir détails"
+                  onClick={() => handleViewDetails(reservation)}
+                >
+                  👁
+                </button>
+                <button 
+                  className="btn-icon" 
+                  title="Modifier"
+                  onClick={() => handleEdit(reservation)}
+                >
+                  ✎
+                </button>
                 <button 
                   className="btn-icon btn-icon-danger" 
                   title="Annuler"
@@ -219,7 +356,7 @@ const Reservations = () => {
         })}
       </div>
 
-      {reservations.length === 0 && (
+      {filteredReservations.length === 0 && (
         <div className="no-results">
           <p>Aucune réservation trouvée.</p>
         </div>

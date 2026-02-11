@@ -5,12 +5,12 @@ const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
-    { path: '/', icon: '🏠', label: 'Dashboard' },
-    { path: '/reservations', icon: '📅', label: 'Réservations' },
-    { path: '/chambres', icon: '🏨', label: 'Chambres' },
-    { path: '/clients', icon: '👥', label: 'Clients' },
-    { path: '/statistiques', icon: '📊', label: 'Statistiques' },
-    { path: '/parametres', icon: '⚙️', label: 'Paramètres' },
+    { path: '/', icon: '', label: 'Dashboard' },
+    { path: '/reservations', icon: '', label: 'Réservations' },
+    { path: '/chambres', icon: '', label: 'Chambres' },
+    { path: '/clients', icon: '', label: 'Clients' },
+    { path: '/statistiques', icon: '', label: 'Statistiques' },
+    { path: '/parametres', icon: '', label: 'Paramètres' },
   ];
 
   return (

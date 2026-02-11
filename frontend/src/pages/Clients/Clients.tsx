@@ -1,14 +1,13 @@
-// frontend/src/pages/Clients/Clients.tsx
 import { useEffect, useState } from 'react';
 import Header from '../../components/Header/Header';
 import Button from '../../components/Button/Button';
 import ClientForm from '../../components/ClientForm/ClientForm';
 import EditClientForm from '../../components/EditClientForm/EditClientForm';
-import ClientDetailsModal from '../../components/ClientDetailsModal/ClientDetailsModal.tsx';
-import { clientsAPI } from '../../services/api.ts';
+import ClientDetailsModal from '../../components/ClientDetailsModal/ClientDetailsModal';
+import { clientsAPI } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
+import { exportClientsCSV } from '../../utils/exportCSV';
 import type { Client } from '../../types';
-import { exportClientsCSV } from '../../utils/exportCSV.ts';
 import './Clients.css';
 
 const Clients = () => {
@@ -19,7 +18,7 @@ const Clients = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [page, setPage] = useState(1);
-  //const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('');
 
@@ -32,40 +31,21 @@ const Clients = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-
-      const response = await clientsAPI.getAll({
+      console.log('🔍 Chargement des clients...');
+      
+      const data = await clientsAPI.getAll({
         page,
         limit,
-        search,
-        statut: statutFilter,
+        search: search || undefined,
+        statut: statutFilter || undefined,
       });
-
-      // récupération propre des données
-      const allClients: Client[] = response.data;
-
-      let filtered = [...allClients];
-
-      // Filtre par recherche
-      if (search) {
-        const searchLower = search.toLowerCase();
-        filtered = filtered.filter(client =>
-          client.nom.toLowerCase().includes(searchLower) ||
-          client.prenom.toLowerCase().includes(searchLower) ||
-          client.email.toLowerCase().includes(searchLower) ||
-          client.telephone.includes(search)
-        );
-      }
-
-      // Filtre par statut
-      if (statutFilter) {
-        filtered = filtered.filter(client => client.statut === statutFilter);
-      }
-
-      setClients(filtered);
-
+      
+      console.log('✅ Clients reçus:', data);
+      setClients(data.data);
+      setTotal(data.total);
     } catch (error: any) {
-      alert('Erreur lors du chargement des clients. Vérifiez que le backend est démarré sur http://localhost:3000');
-      console.error(error);
+      console.error('❌ Erreur chargement clients:', error);
+      alert('Erreur lors du chargement des clients. Vérifiez que le backend est démarré.');
     } finally {
       setLoading(false);
     }
@@ -77,12 +57,13 @@ const Clients = () => {
         await clientsAPI.delete(id);
         fetchClients();
       } catch (error) {
+        console.error('Erreur suppression:', error);
         alert('Erreur lors de la suppression du client');
       }
     }
   };
 
-   const handleEdit = (client: Client) => {
+  const handleEdit = (client: Client) => {
     setSelectedClient(client);
     setIsEditFormOpen(true);
   };
@@ -92,46 +73,20 @@ const Clients = () => {
     setIsDetailsOpen(true);
   };
 
-  const handleExport = () => {
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Statut', 'Réservations', 'Dépenses Totales'];
-    const rows = clients.map(c => [
-      c.prenom,
-      c.nom,
-      c.email,
-      c.telephone,
-      c.statut || 'nouveau',
-      c.nombreReservations || 0,
-      c.depensesTotales || 0,
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `clients_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
-
-  const getStatutBadge = (statut?: string) => {
+  const getStatutBadge = (statut: string) => {
     const badges: Record<string, { label: string; className: string }> = {
       vip: { label: '⭐ VIP', className: 'statut-vip' },
       regulier: { label: 'Régulier', className: 'statut-regulier' },
       nouveau: { label: 'Nouveau', className: 'statut-nouveau' },
     };
-    return badges[statut || 'nouveau'] || { label: 'Nouveau', className: 'statut-nouveau' };
+    return badges[statut] || { label: statut, className: '' };
   };
 
   const getInitials = (prenom: string, nom: string) => {
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
   };
 
-  const total = clients.length;
   const totalPages = Math.ceil(total / limit);
-  const paginatedClients = clients.slice((page - 1) * limit, page * limit);
 
   if (loading && clients.length === 0) {
     return (
@@ -150,7 +105,7 @@ const Clients = () => {
         onSuccess={fetchClients}
       />
       
-       <EditClientForm
+      <EditClientForm
         isOpen={isEditFormOpen}
         onClose={() => {
           setIsEditFormOpen(false);
@@ -160,7 +115,7 @@ const Clients = () => {
         client={selectedClient}
       />
 
-       <ClientDetailsModal
+      <ClientDetailsModal
         isOpen={isDetailsOpen}
         onClose={() => {
           setIsDetailsOpen(false);
@@ -169,14 +124,13 @@ const Clients = () => {
         client={selectedClient}
       />
 
-
       <Header
         title="Gestion des Clients"
-        subtitle={`${total} client${total > 1 ? 's' : ''} au total`}
+        subtitle={`${total} clients au total`}
         actions={
           <>
             <Button variant="outline" onClick={() => exportClientsCSV(clients)}>
-                      📥 Exporter CSV
+              📥 Exporter CSV
             </Button>
             <Button variant="accent" icon="➕" onClick={() => setIsFormOpen(true)}>
               Nouveau Client
@@ -185,6 +139,7 @@ const Clients = () => {
         }
       />
 
+      {/* Search and Filters */}
       <div className="search-section">
         <div className="search-box">
           <span className="search-icon">🔍</span>
@@ -213,7 +168,8 @@ const Clients = () => {
         </select>
       </div>
 
-     <div className="clients-grid">
+      {/* Clients Grid */}
+      <div className="clients-grid">
         {clients.map((client, index) => {
           const statut = getStatutBadge(client.statut);
           return (
