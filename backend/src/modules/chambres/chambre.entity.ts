@@ -1,3 +1,4 @@
+// backend/src/modules/chambres/entities/chambre.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -22,16 +23,20 @@ export class Chambre {
   })
   type: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  // ✅ Prix : entre 5 000 et 2 000 000 FCFA
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
   prix: number;
 
+  // ✅ Capacité : entre 1 et 20 personnes
   @Column({ type: 'int' })
   capacite: number;
 
+  // ✅ Étage : entre 0 et 100 (ILLIMITÉ selon besoin)
   @Column({ type: 'int' })
   etage: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  // ✅ Superficie : entre 10 et 500 m²
+  @Column({ type: 'decimal', precision: 6, scale: 2 })
   superficie: number;
 
   @Column({ type: 'text', nullable: true })
@@ -47,8 +52,10 @@ export class Chambre {
   @Column({ type: 'json', nullable: true })
   equipements: string[];
 
-/*  @Column({ nullable: true })
-  imageUrl: string;*/
+  // ✅ CORRECTION : imageUrl est une string (une seule image)
+  // Décommenté et corrigé
+  @Column({ nullable: true, type: 'varchar', length: 500 })
+  imageUrl: string;
 
   @CreateDateColumn()
   dateCreation: Date;

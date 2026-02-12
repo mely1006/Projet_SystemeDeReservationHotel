@@ -73,7 +73,7 @@ const ChambreDetailsModal = ({ isOpen, onClose, chambre }: ChambreDetailsModalPr
         {chambre.imageUrl ? (
           <div className="chambre-image-large">
             <img 
-              src={`http://localhost:3000${chambre.imageUrl}`} 
+                src={chambre.imageUrl}
               alt={`Chambre ${chambre.numero}`}
             />
           </div>

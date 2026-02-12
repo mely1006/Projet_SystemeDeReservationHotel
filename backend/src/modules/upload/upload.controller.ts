@@ -1,51 +1,60 @@
+// backend/src/modules/upload/upload.controller.ts
 import {
   Controller,
   Post,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Get,
+  Param,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { Response } from 'express';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 @Controller('upload')
 export class UploadController {
-  @Post('image')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/chambres',
-        filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          cb(null, `${randomName}${extname(file.originalname)}`);
-        },
-      }),
-      fileFilter: (req, file, cb) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-          return cb(
-            new BadRequestException('Seules les images sont autorisées'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-      limits: {
-        fileSize: 5 * 1024 * 1024,
-      },
-    }),
-  )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+
+  // ✅ CORRECTION : Route d'upload qui sauvegarde dans uploads/chambres
+  @Post('chambre')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadChambreImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('Aucun fichier fourni');
+      throw new BadRequestException('Aucun fichier envoyé');
     }
 
+    // ✅ URL correcte pointant vers /api/uploads/chambres/
+    const imageUrl = `http://localhost:3000/uploads/chambres/${file.filename}`;
+
+    console.log(`✅ Image uploadée : ${file.filename}`);
+    console.log(`📍 Chemin : uploads/chambres/${file.filename}`);
+
     return {
+      success: true,
       filename: file.filename,
-      url: `/uploads/chambres/${file.filename}`,
+      originalName: file.originalname,
+      size: file.size,
+      url: imageUrl,
+      message: 'Image uploadée avec succès',
+    };
+  }
+
+  // ✅ Route générique (rétro-compatibilité)
+  @Post('image')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Aucun fichier envoyé');
+    }
+
+    const imageUrl = `http://localhost:3000/uploads/chambres/${file.filename}`;
+
+    return {
+      success: true,
+      filename: file.filename,
+      url: imageUrl,
     };
   }
 }

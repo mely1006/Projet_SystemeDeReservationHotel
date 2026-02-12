@@ -13,6 +13,9 @@ interface EditChambreFormProps {
 }
 
 const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFormProps) => {
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     numero: '',
     type: 'standard' as 'standard' | 'double' | 'deluxe' | 'suite' | 'suite_presidentielle',
@@ -27,38 +30,52 @@ const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (chambre) {
-      setFormData({
-        numero: chambre.numero,
-        type: chambre.type,
-        prix: chambre.prix,
-        capacite: chambre.capacite,
-        etage: chambre.etage,
-        superficie: chambre.superficie,
-        description: chambre.description || '',
-        statut: chambre.statut,
-      });
-    }
-  }, [chambre]);
+ useEffect(() => {
+  if (chambre) {
+    setFormData({
+      numero: chambre.numero,
+      type: chambre.type,
+      prix: chambre.prix,
+      capacite: chambre.capacite,
+      etage: chambre.etage,
+      superficie: chambre.superficie,
+      description: chambre.description || '',
+      statut: chambre.statut,
+    });
+
+    setImagePreview(chambre.imageUrl || null);
+  }
+}, [chambre]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chambre) return;
-    
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  if (!chambre) return;
 
-    try {
-      await chambresAPI.update(chambre.id, formData);
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors de la modification');
-    } finally {
-      setLoading(false);
+  setError('');
+  setLoading(true);
+
+  try {
+    const data = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      data.append(key, String(value));
+    });
+
+    if (imageFile) {
+      data.append('image', imageFile);
     }
-  };
+
+    await chambresAPI.update(chambre.id, data);
+
+    onSuccess();
+    onClose();
+  } catch (err: any) {
+    setError(err.response?.data?.message || 'Erreur lors de la modification');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -71,6 +88,15 @@ const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFor
         : value,
     }));
   };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setImageFile(file);
+  setImagePreview(URL.createObjectURL(file));
+};
+
 
   if (!chambre) return null;
 
@@ -123,10 +149,13 @@ const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFor
               value={formData.prix}
               onChange={handleChange}
               min="0"
-              step="100"
+              step="1000"
               required
               className="form-input"
             />
+            <p className="form-hint">
+              Respectez la hiérarchie : Standard ≤ Double ≤ Deluxe ≤ Suite ≤ Suite Présidentielle
+            </p>
           </div>
 
           <div className="form-group">
@@ -193,6 +222,33 @@ const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFor
             </select>
           </div>
         </div>
+
+        <div className="form-group">
+          <label className="form-label">Image de la chambre</label>
+          
+          {imagePreview && (
+            <div style={{ marginBottom: '1rem' }}>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{
+                  width: '100%',
+                  maxHeight: '200px',
+                  objectFit: 'cover',
+                  borderRadius: '8px'
+                }}
+              />
+            </div>
+          )}
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="form-input"
+          />
+        </div>
+
 
         <div className="form-group">
           <label className="form-label">Description</label>

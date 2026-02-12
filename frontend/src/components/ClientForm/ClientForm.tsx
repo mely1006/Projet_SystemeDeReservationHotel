@@ -78,7 +78,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
               name="prenom"
               value={formData.prenom}
               onChange={handleChange}
-              placeholder="Marie"
+              placeholder="Baba"
               required
               className="form-input"
             />
@@ -93,7 +93,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
               name="nom"
               value={formData.nom}
               onChange={handleChange}
-              placeholder="Dubois"
+              placeholder="EGNON"
               required
               className="form-input"
             />
@@ -108,7 +108,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="marie.dubois@email.com"
+              placeholder="nom.prenom@email.com"
               required
               className="form-input"
             />
@@ -123,7 +123,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
               name="telephone"
               value={formData.telephone}
               onChange={handleChange}
-              placeholder="+33 6 12 34 56 78"
+              placeholder="+229 01 41 54 84 05"
               required
               className="form-input"
             />
@@ -137,7 +137,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
             name="adresse"
             value={formData.adresse}
             onChange={handleChange}
-            placeholder="123 Rue de la République"
+            placeholder="123 Agori"
             className="form-input"
           />
         </div>
@@ -150,7 +150,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
               name="ville"
               value={formData.ville}
               onChange={handleChange}
-              placeholder="Paris"
+              placeholder="Calavi"
               className="form-input"
             />
           </div>
@@ -175,7 +175,7 @@ const ClientForm = ({ isOpen, onClose, onSuccess }: ClientFormProps) => {
             name="pays"
             value={formData.pays}
             onChange={handleChange}
-            placeholder="France"
+            placeholder="BENIN"
             className="form-input"
           />
         </div>

@@ -16,12 +16,12 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
+  /*headers: {
     'Content-Type': 'application/json',
-  },
+  },*/
 });
 
-// ===== CLIENTS =====
+// CLIENTS 
 export const clientsAPI = {
   getAll: async (params?: {
     page?: number;
@@ -69,7 +69,7 @@ export const clientsAPI = {
   },
 };
 
-// ===== CHAMBRES =====
+// CHAMBRES
 export const chambresAPI = {
   getAll: async (params?: {
     statut?: string;
@@ -90,10 +90,22 @@ export const chambresAPI = {
     return data;
   },
 
-  update: async (id: number, chambre: Partial<CreateChambreInput>): Promise<Chambre> => {
-    const { data } = await api.patch(`/chambres/${id}`, chambre);
-    return data;
-  },
+  update: async (
+  id: number,
+  chambre: Partial<CreateChambreInput> | FormData
+): Promise<Chambre> => {
+
+  const isFormData = chambre instanceof FormData;
+
+  const { data } = await api.patch(`/chambres/${id}`, chambre, {
+    headers: isFormData
+      ? { 'Content-Type': 'multipart/form-data' }
+      : { 'Content-Type': 'application/json' },
+  });
+
+  return data;
+},
+
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/chambres/${id}`);
@@ -112,7 +124,7 @@ export const chambresAPI = {
   },
 };
 
-// ===== RÉSERVATIONS =====
+//  RÉSERVATIONS 
 export const reservationsAPI = {
   getAll: async (params?: {
     statut?: string;
@@ -177,7 +189,7 @@ export const reservationsAPI = {
   },
 };
 
-// ===== PAIEMENTS =====
+// PAIEMENTS 
 export const paiementsAPI = {
   getAll: async (): Promise<Paiement[]> => {
     const { data } = await api.get('/paiements');
@@ -214,7 +226,7 @@ export const paiementsAPI = {
   },
 };
 
-// ===== DASHBOARD =====
+// DASHBOARD 
 export const dashboardAPI = {
   getStats: async (): Promise<DashboardStats> => {
     const [reservations, chambres, clients, checkInsToday, checkOutsToday] =
