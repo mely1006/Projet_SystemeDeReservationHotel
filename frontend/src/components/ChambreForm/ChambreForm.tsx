@@ -60,8 +60,8 @@ const ChambreForm: React.FC<ChambreFormProps> = ({ isOpen, onClose, onSuccess, c
       return;
     }
 
-    // Vérifier la taille (5MB max)
-    if (file.size > 8* 1024 * 1024) {
+    // Vérifier la taille (10MB max)
+    if (file.size > 10* 1024 * 1024) {
       setError('L\'image ne doit pas dépasser 10MB');
       return;
     }

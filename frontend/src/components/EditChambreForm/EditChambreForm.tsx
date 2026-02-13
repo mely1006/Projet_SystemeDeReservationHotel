@@ -3,7 +3,7 @@ import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
 import { chambresAPI } from '../../services/api';
 import type { Chambre } from '../../types';
-//import './components/ChambreForm/ChambreForm.css';
+import '../ChambreForm/ChambreForm.css';
 
 interface EditChambreFormProps {
   isOpen: boolean;
@@ -223,31 +223,31 @@ const EditChambreForm = ({ isOpen, onClose, onSuccess, chambre }: EditChambreFor
           </div>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Image de la chambre</label>
-          
-          {imagePreview && (
-            <div style={{ marginBottom: '1rem' }}>
-              <img
-                src={imagePreview}
-                alt="Preview"
-                style={{
-                  width: '100%',
-                  maxHeight: '200px',
-                  objectFit: 'cover',
-                  borderRadius: '8px'
-                }}
-              />
-            </div>
-          )}
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="form-input"
+    <div className="form-group">
+      <label className="form-label">Image de la chambre</label>
+      
+      {imagePreview && (
+        <div style={{ marginBottom: '1rem' }}>
+          <img
+            src={imagePreview}
+            alt="Preview"
+            style={{
+              width: '100%',
+              maxHeight: '200px',
+              objectFit: 'cover',
+              borderRadius: '8px'
+            }}
           />
         </div>
+      )}
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="form-input"
+      />
+    </div>
 
 
         <div className="form-group">

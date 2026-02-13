@@ -6,6 +6,7 @@ import Clients from './pages/Clients/Clients';
 import Reservations from './pages/Reservations/Reservations';
 import NouvelleReservation from './pages/NouvelleReservation/NouvelleReservation';
 import Statistiques from './pages/Statistiques/Statistiques';
+import Parametres from './pages/Parametres/Parametres';
 import './styles/global.css';
 import './App.css';
 
@@ -22,12 +23,7 @@ function App() {
             <Route path="/reservations" element={<Reservations />} />
             <Route path="/reservations/nouvelle" element={<NouvelleReservation />} />
             <Route path="/statistiques" element={<Statistiques />} />
-            <Route path="/parametres" element={
-              <div className="coming-soon">
-                <h1>⚙️ Paramètres</h1>
-                <p>Cette page est en construction</p>
-              </div>
-            } />
+            <Route path="/parametres" element={<Parametres />} />
           </Routes>
         </main>
       </div>

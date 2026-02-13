@@ -8,6 +8,7 @@ import { reservationsAPI, chambresAPI } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
 import { exportReservationsCSV } from '../../utils/exportCSV';
 import type { Reservation } from '../../types';
+import { sendConfirmationEmail } from '../../services/emailService';
 import './Reservations.css';
 
 const Reservations = () => {
@@ -40,25 +41,40 @@ const Reservations = () => {
   };
 
   const handleConfirm = async (reservation: Reservation) => {
-    if (!window.confirm('Confirmer cette réservation ?')) return;
-
+  if (window.confirm('Confirmer cette réservation ?')) {
     try {
-      // 1. Mettre à jour le statut de la réservation
+      // 1. Mettre à jour le statut
       await reservationsAPI.update(reservation.id, { statut: 'confirmee' });
-
-      // 2. Marquer la chambre comme occupée
+      
+      // 2. Mettre à jour la chambre
       await chambresAPI.update(reservation.chambre.id, { statut: 'occupee' });
-
-      // 3. Envoyer l'email de confirmation (géré par le backend)
-      // L'email sera envoyé automatiquement lors de la mise à jour
-
-      alert('✅ Réservation confirmée ! Un email a été envoyé au client.');
+      
+      // 3. Envoyer l'email de confirmation
+      const emailSent = await sendConfirmationEmail({
+        client_name: `${reservation.client.prenom} ${reservation.client.nom}`,
+        client_email: reservation.client.email,
+        chambre_numero: reservation.chambre.numero,
+        chambre_type: reservation.chambre.type,
+        date_debut: reservation.dateDebut,
+        date_fin: reservation.dateFin,
+        nombre_adultes: reservation.nombreAdultes,
+        prix_total: reservation.prixTotal,
+      });
+      
+      if (emailSent) {
+        alert('✅ Réservation confirmée ! Email envoyé au client.');
+      } else {
+        alert('⚠️ Réservation confirmée, mais l\'email n\'a pas pu être envoyé.');
+      }
+      
+      // 4. Rafraîchir la liste
       fetchReservations();
     } catch (error) {
       console.error('Erreur confirmation:', error);
       alert('❌ Erreur lors de la confirmation');
     }
-  };
+  }
+};
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')) {
@@ -326,7 +342,7 @@ const Reservations = () => {
                     title="Confirmer"
                     onClick={() => handleConfirm(reservation)}
                   >
-                    ✅ Confirmer
+                     ✅
                   </button>
                 )}
                 <button 

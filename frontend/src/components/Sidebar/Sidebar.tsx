@@ -17,7 +17,7 @@ const Sidebar = () => {
     <aside className="sidebar">
       <div className="logo">
         <span className="logo-icon">◆</span>
-        HotelPro
+        Hôtel Paradise
       </div>
       <nav className="nav-menu">
         {menuItems.map((item) => (
